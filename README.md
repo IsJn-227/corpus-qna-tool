@@ -1,25 +1,9 @@
 # Corpus Q&A Tool (Python translation of `qna_tool.h`)
 
-A Python implementation of the Assignment 7 interface: given a corpus fed in
+A Python implementation of given corpus fed in
 sentence-by-sentence (as `(book_code, page, paragraph, sentence_no,
 sentence)`), find the top-k most relevant paragraphs for a natural-language
 query, then feed them to an LLM to synthesize a grounded, cited answer.
-
-This mirrors the C++ header you were given almost 1:1:
-
-| `qna_tool.h` (C++)                                                | This project (Python)                            |
-|---------------------------------------------------------------------|---------------------------------------------------|
-| `QNA_tool()` / `~QNA_tool()`                                          | `QNATool()` (GC'd automatically)                   |
-| `insert_sentence(book_code, page, paragraph, sentence_no, s)`        | `QNATool.insert_sentence(...)` — same signature    |
-| `Node* get_top_k_para(question, k)`                                   | `QNATool.get_top_k_para(question, k) -> Node`      |
-| `string get_paragraph(book_code, page, paragraph)`                    | `QNATool.get_paragraph(...) -> str`                |
-| `void query(question, filename)`                                     | `QNATool.query(question, filename)`                |
-| `void query_llm(filename, root, k, API_KEY, question)` (private)     | `QNATool.query_llm(...)` (called internally)       |
-| `Node` (linked list: book_code/page/paragraph/next)                   | `src/node.py: Node` — same fields, real `.next`    |
-
-`get_top_k_para` genuinely returns a **linked list** (a `Node` with
-`.next`), not a Python list, so the shape of the interface -- and the code
-you'd write to walk it in `query_llm` -- matches the original assignment.
 
 ## How it works
 
