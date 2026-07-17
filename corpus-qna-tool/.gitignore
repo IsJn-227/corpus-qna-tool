@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+data/cache/*.pkl
+data/raw_corpus/*.txt
+.venv/
+venv/
+*.egg-info/
