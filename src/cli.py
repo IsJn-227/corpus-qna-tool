@@ -5,12 +5,17 @@ Command-line entry point wiring: corpus_reader -> QNATool -> query().
 
 Usage examples:
 
-    # Retrieval only, no LLM call needed (good for testing Part 1 alone):
+    # Retrieval only, no LLM call needed (good for testing retrieval alone):
     python -m src.cli --query "Gandhi's views on the partition of India" --k 8 --no-llm
 
     # Full pipeline, writing the LLM's answer to answer.txt:
     python -m src.cli --query "Gandhi's views on the partition of India" --k 8 \
         --backend anthropic --out answer.txt
+
+Note: building embeddings (tool.build_embeddings()) downloads and runs a
+sentence-transformers model on every paragraph, so indexing a large corpus
+will take noticeably longer than the old BM25/frequency-only version. For a
+98-book corpus, expect this step to dominate runtime.
 """
 
 from __future__ import annotations
@@ -19,20 +24,17 @@ import argparse
 import os
 
 from src.corpus_reader import load_into_tool
-from src.general_freq import load_general_freq
 from src.node import linked_list_to_list
 from src.qna_tool import QNATool
 
 DEFAULT_CORPUS_DIR = "data/raw_corpus"
-DEFAULT_GENERAL_FREQ_CSV = "data/general_freq.csv"
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Corpus Q&A tool (top-k retrieval + LLM).")
+    parser = argparse.ArgumentParser(description="Corpus Q&A tool (BM25 + semantic retrieval + LLM).")
     parser.add_argument("--query", required=True, help="The question to ask the corpus.")
     parser.add_argument("--k", type=int, default=6, help="Number of top paragraphs to retrieve.")
     parser.add_argument("--corpus-dir", default=DEFAULT_CORPUS_DIR)
-    parser.add_argument("--general-freq-csv", default=DEFAULT_GENERAL_FREQ_CSV)
     parser.add_argument("--no-llm", action="store_true", help="Only show retrieved paragraphs; skip the LLM call.")
     parser.add_argument("--backend", default="anthropic", choices=["anthropic", "openai", "huggingface"])
     parser.add_argument("--model", default=None, help="Override the default model for the chosen backend.")
@@ -44,19 +46,14 @@ def main():
             f"No corpus found at '{args.corpus_dir}'. Drop .txt book files there first "
             f"(see README.md)."
         )
-    if not os.path.exists(args.general_freq_csv):
-        raise SystemExit(
-            f"No general-frequency CSV found at '{args.general_freq_csv}'. "
-            f"See README.md for where to get one."
-        )
-
-    print("Loading general word-frequency table...")
-    general_freq = load_general_freq(args.general_freq_csv)
 
     print("Building index from corpus (insert_sentence per sentence)...")
-    tool = QNATool(general_freq=general_freq)
+    tool = QNATool()
     load_into_tool(tool, args.corpus_dir)
     print(f"  {len(tool.p_dict)} paragraphs indexed.")
+
+    print("Building paragraph embeddings (this downloads/runs a sentence-transformers model)...")
+    tool.build_embeddings()
 
     print(f"\nSearching for: {args.query!r}\n")
     head = tool.get_top_k_para(args.query, args.k)

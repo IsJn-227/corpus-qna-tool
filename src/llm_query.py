@@ -4,14 +4,6 @@ llm_query.py
 Prompt construction + LLM backends, used by QNATool.query_llm() /
 QNATool.query() (see src/qna_tool.py) to implement Part 2: "Querying the
 LLM".
-
-This corresponds to the C++ side's:
-    void query_llm(string filename, Node *root, int k, string API_KEY, string question);
-and the provided api_call.py (the script that actually talks to the ChatGPT
-API). Since this whole project is already in Python, we skip shelling out to
-a separate script and call the LLM API directly from here -- but the
-responsibilities are the same: build the grounded prompt, send it, get the
-answer back.
 """
 
 from __future__ import annotations
@@ -19,7 +11,6 @@ from __future__ import annotations
 import os
 from typing import List, Optional, Tuple
 
-# (book_code, page, paragraph, text)
 Excerpt = Tuple[int, int, int, str]
 
 SYSTEM_PROMPT = """You are a careful research assistant answering questions about a specific \
@@ -52,10 +43,6 @@ Using only the excerpts above, answer the question. Cite the source \
 partially answer the question, answer what you can and note what's missing."""
 
 
-# ----------------------------------------------------------------------------
-# Backends
-# ----------------------------------------------------------------------------
-
 def _call_anthropic(system_prompt: str, user_prompt: str, api_key: Optional[str], model: str = "claude-sonnet-4-6") -> str:
     import anthropic
 
@@ -84,12 +71,6 @@ def _call_openai(system_prompt: str, user_prompt: str, api_key: Optional[str], m
 
 
 def _call_huggingface_local(system_prompt: str, user_prompt: str, api_key: Optional[str], model: str = "meta-llama/Llama-3.1-8B-Instruct") -> str:
-    """
-    Stub for a locally-run / free open-source model via `transformers`. Fill
-    this in if you want to compare an open-source model's answers against
-    Claude/ChatGPT (addresses the "is ChatGPT really the holy grail?"
-    discussion question in the assignment).
-    """
     raise NotImplementedError(
         "Wire this up with transformers.pipeline('text-generation', model=model) "
         "if you want to compare an open-source model."

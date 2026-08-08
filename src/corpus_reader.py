@@ -1,37 +1,28 @@
 """
 corpus_reader.py
 -----------------
-The header's ingestion contract is:
+Generic loader that reads plain-text book files and feeds them into a
+QNATool instance sentence-by-sentence via insert_sentence(), matching the
+ingestion contract described in qna_tool.h.
 
-    void insert_sentence(int book_code, int page, int paragraph,
-                          int sentence_no, string sentence);
+Assumed file layout (adjust to match your actual corpus format from A6):
 
-called once per sentence in the corpus -- presumably by a driver you (or the
-provided A7 harness) already have from A6, which parses the raw book files
-into (book_code, page, paragraph, sentence_no, sentence) tuples.
-
-This module is a generic, adjustable version of that driver, since we don't
-have your exact A6 corpus file format. It reads plain-text book files and
-splits them into pages -> paragraphs -> sentences using simple heuristics.
-ADAPT THE SPLITTING LOGIC BELOW to match whatever format your actual corpus
-files (the 98 Gandhi books / Ramana books) are provided in -- e.g. if the
-grader gives you a CSV/JSON with book_code,page,paragraph,sentence_no,sentence
-already laid out, skip this file entirely and call
-QNATool.insert_sentence(...) directly from that structured data instead.
-
-Assumed plain-text layout (change as needed):
     data/raw_corpus/
-        <book_code>_<title>.txt        # book_code parsed from leading digits,
-                                        # else assigned by sorted file order
+        <book_code>_<title>.txt
 
-    Within a file:
-      - Pages separated by a form-feed character '\\x0c', or the literal
-        marker '[PAGE]' on its own line. If neither appears, the whole file
-        is one page.
-      - Paragraphs separated by one or more blank lines.
-      - Sentences split on '.', '!', '?' followed by whitespace. This is a
-        simple heuristic; swap in `nltk.sent_tokenize` for better accuracy
-        if you have nltk available and abbreviations are causing bad splits.
+Within each file:
+    - Pages separated by a form-feed character '\\x0c' OR the literal
+      marker '[PAGE]' on its own line. If neither is present, the whole
+      file is treated as a single page (page = 1).
+    - Paragraphs separated by one or more blank lines.
+    - Sentences within a paragraph are split on '.', '!', '?' followed by
+      whitespace (a simple heuristic -- swap in nltk.sent_tokenize for
+      better accuracy if abbreviations are causing bad splits).
+
+book_code is taken from the leading integer in the filename
+(e.g. "12_satyagraha_in_south_africa.txt" -> book_code = 12). If the
+filename has no leading integer, book_code is assigned in sorted-filename
+order starting from 0.
 """
 
 from __future__ import annotations

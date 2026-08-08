@@ -1,8 +1,9 @@
 __pycache__/
 *.pyc
 .env
-data/cache/*.pkl
 data/raw_corpus/*.txt
+data/general_freq.csv
 .venv/
 venv/
 *.egg-info/
+answer.txt
